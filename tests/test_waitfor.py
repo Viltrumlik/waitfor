@@ -207,7 +207,7 @@ class CliTest(unittest.TestCase):
     def test_a_timeout_exits_three(self):
         out = self.run_cli("/no/such/path", "--timeout", "0.4", "--interval", "0.1", "--quiet")
         self.assertEqual(out.returncode, 3)
-        self.assertIn("muhlat tugadi", out.stderr)
+        self.assertIn("timed out", out.stderr)
 
     def test_no_target_prints_help(self):
         out = self.run_cli()

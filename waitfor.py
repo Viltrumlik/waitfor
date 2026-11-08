@@ -106,7 +106,7 @@ def parse_target(text, want_status=None):
     """
     text = text.strip()
     if not text:
-        raise ValueError("bo'sh nishon")
+        raise ValueError("empty target")
     if text.startswith("http://") or text.startswith("https://"):
         return HttpTarget(text, want_status)
     if BARE_PORT.match(text):
@@ -115,7 +115,7 @@ def parse_target(text, want_status=None):
     if m:
         port = int(m.group("port"))
         if not 0 < port < 65536:
-            raise ValueError("port oralig'idan tashqarida: %s" % text)
+            raise ValueError("port out of range: %s" % text)
         return TcpTarget(m.group("host") or "127.0.0.1", port)
     return FileTarget(text)
 
@@ -140,22 +140,22 @@ def wait(targets, timeout, interval, on_progress=None):
 def main(argv=None):
     p = argparse.ArgumentParser(
         prog="waitfor",
-        description="Port, URL, fayl yoki buyruq tayyor bo'lguncha kutadi.",
-        epilog="misol: waitfor :5432 http://localhost:8000/health --timeout 60")
-    p.add_argument("targets", nargs="*", metavar="NISHON",
-                   help="port (5432 yoki host:5432), URL, yoki fayl yo'li")
-    p.add_argument("--cmd", action="append", metavar="BUYRUQ",
-                   help="0 qaytarguncha kutiladigan buyruq (bir necha marta bo'lishi mumkin)")
-    p.add_argument("--timeout", type=float, default=30.0, metavar="SONIYA")
-    p.add_argument("--interval", type=float, default=0.5, metavar="SONIYA")
-    p.add_argument("--status", type=int, metavar="KOD",
-                   help="URL uchun aynan shu HTTP kodi kutilsin")
+        description="Block until a port, URL, file or command is ready.",
+        epilog="example: waitfor :5432 http://localhost:8000/health --timeout 60")
+    p.add_argument("targets", nargs="*", metavar="TARGET",
+                   help="a port (5432 or host:5432), a URL, or a file path")
+    p.add_argument("--cmd", action="append", metavar="COMMAND",
+                   help="wait until this command exits 0 (repeatable)")
+    p.add_argument("--timeout", type=float, default=30.0, metavar="SECONDS")
+    p.add_argument("--interval", type=float, default=0.5, metavar="SECONDS")
+    p.add_argument("--status", type=int, metavar="CODE",
+                   help="require exactly this HTTP status")
     p.add_argument("-q", "--quiet", action="store_true")
     p.add_argument("--version", action="version", version="waitfor " + VERSION)
     args = p.parse_args(argv)
 
     if args.timeout <= 0 or args.interval <= 0:
-        print("xato: timeout va interval musbat bo'lishi kerak", file=sys.stderr)
+        print("error: timeout and interval must be positive", file=sys.stderr)
         return EXIT_USAGE
 
     targets = []
@@ -163,7 +163,7 @@ def main(argv=None):
         for text in args.targets:
             targets.append(parse_target(text, args.status))
     except ValueError as e:
-        print("xato: %s" % e, file=sys.stderr)
+        print("error: %s" % e, file=sys.stderr)
         return EXIT_USAGE
     for command in (args.cmd or []):
         targets.append(CommandTarget(command))
@@ -174,21 +174,21 @@ def main(argv=None):
 
     def progress(pending, left):
         if not args.quiet:
-            print("kutilmoqda (%ds qoldi): %s"
+            print("waiting (%ds left): %s"
                   % (left, ", ".join(str(t) for t in pending)), file=sys.stderr)
 
     try:
         ok, took = wait(targets, args.timeout, args.interval, progress)
     except KeyboardInterrupt:
-        print("to'xtatildi", file=sys.stderr)
+        print("interrupted", file=sys.stderr)
         return EXIT_ERROR
 
     if ok:
         if not args.quiet:
-            print("tayyor: %s (%.1fs)" % (", ".join(str(t) for t in targets), took))
+            print("ready: %s (%.1fs)" % (", ".join(str(t) for t in targets), took))
         return EXIT_OK
     late = [str(t) for t in targets if not t.ready()]
-    print("muhlat tugadi (%.0fs): %s" % (args.timeout, ", ".join(late)), file=sys.stderr)
+    print("timed out after %gs: %s" % (args.timeout, ", ".join(late)), file=sys.stderr)
     return EXIT_TIMEOUT
 
 

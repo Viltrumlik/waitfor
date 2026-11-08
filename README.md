@@ -60,7 +60,7 @@ Progress goes to stderr, so piping stdout stays clean.
 - run: pytest
 ```
 
-The build now fails with `muhlat tugadi (90s): 127.0.0.1:5432` instead of a hundred confusing connection errors from the test suite.
+The build now fails with `timed out after 90s: 127.0.0.1:5432` instead of a hundred confusing connection errors from the test suite.
 
 ## Install
 
