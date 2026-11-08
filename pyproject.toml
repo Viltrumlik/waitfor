@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "waitfor-cli"
+version = "0.1.0"
+description = "Block until a port, URL, file or command is ready."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Alisher Muhammadaliyev", email = "viltrumlik@gmail.com" }]
+keywords = ["ci", "healthcheck", "readiness", "docker-compose", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Viltrumlik/waitfor"
+Issues = "https://github.com/Viltrumlik/waitfor/issues"
+
+[project.scripts]
+waitfor = "waitfor:main"
+
+[tool.setuptools]
+py-modules = ["waitfor"]
